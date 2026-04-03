@@ -84,6 +84,7 @@ def _convert_to_prompt_gen_state(state: PipelineState) -> PromptGenState:
         "current_image": state.get("current_image", ""),
         "text_prompts": [],
         "vlm_raw_response": None,
+        "vlm_cache_dir": state.get("vlm_cache_dir"),
     }
 
 

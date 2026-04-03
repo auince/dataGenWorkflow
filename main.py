@@ -123,6 +123,7 @@ def initialize_state(
     max_images: int | None,
     checkpoint_data: dict | None,
     offset: int = 0,
+    completed_annotations: list | None = None,
 ) -> "PipelineState":
     """Initialize pipeline state.
 
@@ -196,7 +197,7 @@ def initialize_state(
         current_image_results=[],
         iteration_round=0,
         low_quality_samples=[],
-        completed_annotations=[],
+        completed_annotations=completed_annotations or [],
         discarded_samples=[],
         checkpoint=CheckpointMetadata(step=0, timestamp="", agent_name=None),
         image_dir=str(input_path),

@@ -40,3 +40,4 @@ class PipelineState(TypedDict):
     quality_score: Optional[float]
     evaluation_result: str
     evaluation_details: Dict[str, Any]
+    vlm_cache_dir: Optional[str]

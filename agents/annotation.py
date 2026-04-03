@@ -32,7 +32,7 @@ class AnnotationAgent(BaseAgent[AnnotationState]):
     ):
         super().__init__(name)
         self.model_path = model_path
-        self.device = device or ("cuda" if torch.cuda.is_available() else "cpu")
+        self.device = device or ("cuda:1" if torch.cuda.is_available() else "cpu")
         self.predictor = None
 
     def _load_model(self):

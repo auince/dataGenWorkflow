@@ -16,6 +16,8 @@ class PipelineStateInput(TypedDict):
     image_dir: str
     output_dir: str
     images: list
+    vlm_cache_dir: str
+    completed_annotations: list
 
 
 class PipelineStateOutput(TypedDict):

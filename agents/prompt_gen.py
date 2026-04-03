@@ -16,6 +16,7 @@ class PromptGenState(TypedDict):
     current_image: str
     text_prompts: List[str]
     vlm_raw_response: Optional[str]
+    vlm_cache_dir: Optional[str]
 
 
 class PromptGenAgent(BaseAgent[PromptGenState]):
@@ -46,6 +47,15 @@ Only return valid JSON, no explanation."""
             state["vlm_raw_response"] = None
             return state
 
+        vlm_cache_dir = state.get("vlm_cache_dir")
+        if vlm_cache_dir:
+            cached = self._load_from_cache(image_path, vlm_cache_dir)
+            if cached:
+                state["text_prompts"] = cached["concepts"]
+                state["vlm_raw_response"] = cached["raw_response"]
+                self.logger.info(f"Using cached VLM prompts for: {image_path}")
+                return state
+
         self.logger.info(f"Generating prompts for: {image_path}")
 
         image = cv2.imread(image_path)
@@ -65,12 +75,42 @@ Only return valid JSON, no explanation."""
             concepts = self._parse_response(response)
             state["text_prompts"] = concepts
             self.logger.info(f"Generated {len(concepts)} prompts: {concepts}")
+
+            if vlm_cache_dir:
+                self._save_to_cache(image_path, vlm_cache_dir, concepts, response)
         except Exception as e:
             self.logger.error(f"VLM call failed: {e}")
             state["text_prompts"] = ["object"]
             state["vlm_raw_response"] = None
 
         return state
+
+    def _load_from_cache(self, image_path: str, cache_dir: str) -> dict | None:
+        from pathlib import Path
+
+        img_name = Path(image_path).stem
+        cache_path = Path(cache_dir) / f"vlm_{img_name}.json"
+        if cache_path.exists():
+            try:
+                with open(cache_path) as f:
+                    return json.load(f)
+            except (json.JSONDecodeError, IOError):
+                return None
+        return None
+
+    def _save_to_cache(
+        self, image_path: str, cache_dir: str, concepts: list, raw_response: str
+    ):
+        from pathlib import Path
+
+        img_name = Path(image_path).stem
+        cache_path = Path(cache_dir) / f"vlm_{img_name}.json"
+        try:
+            Path(cache_dir).mkdir(parents=True, exist_ok=True)
+            with open(cache_path, "w") as f:
+                json.dump({"concepts": concepts, "raw_response": raw_response}, f)
+        except IOError as e:
+            self.logger.warning(f"Failed to save VLM cache for {image_path}: {e}")
 
     def _parse_response(self, response: str) -> List[str]:
         content = response.strip()
