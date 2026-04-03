@@ -1,0 +1,21 @@
+text_generation_templates:
+  simple: "Generate text description for: {target}"
+  thermal: "Generate thermal-aware description for: {target}, thermal state: {thermal_state}"
+  spatial: "Generate spatial description for: {target}, location: {location}"
+  distant: "Generate distant target description for: {target}, distance: {distance}"
+  hidden: "Generate hidden/obscured target description for: {target}, obstruction: {obstruction}"
+
+evaluation_template:
+  dimensions:
+    - name: 完整性
+      description: 文本是否完整描述目标的所有关键特征
+    - name: 准确性
+      description: 文本描述是否与图像内容一致
+    - name: 简洁性
+      description: 文本是否简洁明了，无冗余
+    - name: 领域适配性
+      description: 文本是否使用了正确的领域术语
+    - name: 热特征描述
+      description: 红外图像的热特征是否被正确描述
+
+regeneration_template: "请根据以下反馈重新生成描述：{feedback}"

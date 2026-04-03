@@ -1,0 +1,15 @@
+langgraph>=1.0
+langchain>=1.0
+langchain-core
+langchain-community
+openai
+pycocotools
+opencv-python
+numpy
+pandas
+pyyaml
+tqdm
+pytest
+ultralytics>=8.0
+httpx>=0.25.0
+Pillow>=10.0

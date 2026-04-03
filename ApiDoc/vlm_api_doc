@@ -1,0 +1,157 @@
+# Qwen3-VL-32B-Instruct vLLM Deployment
+
+## Overview
+
+This guide explains how to run Qwen3-VL-32B-Instruct with vLLM using GPU 1 with 8-bit FP8 quantization.
+
+## Hardware
+
+- **GPU**: 1 x NVIDIA L40 (46GB)
+- **Tensor Parallel**: 1
+
+## Quantization
+
+- **Method**: FP8 (8-bit floating point)
+- **Benefits**: Reduces memory footprint while maintaining model quality
+
+## Quick Start
+
+### Start Server
+
+```bash
+cd /data/lch/Models/Modelscope/Qwen3-VL-32B-Instruct
+bash start_vllm.sh
+```
+
+### Stop Server
+
+```bash
+pkill -f "Qwen3-VL-32B-Instruct"
+```
+
+### API Usage
+
+**Chat Completions API:**
+```bash
+curl http://localhost:1285/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "Qwen/Qwen3-VL-32B-Instruct",
+    "messages": [{"role": "user", "content": "Hello, how are you?"}],
+    "max_tokens": 512
+  }'
+```
+
+**With image URL:**
+```bash
+curl http://localhost:1285/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "Qwen/Qwen3-VL-32B-Instruct",
+    "messages": [
+      {"role": "user", "content": [
+        {"type": "image_url", "image_url": {"url": "https://example.com/image.jpg"}},
+        {"type": "text", "text": "Describe this image"}
+      ]}
+    ],
+    "max_tokens": 512
+  }'
+```
+
+**With local image:**
+```bash
+curl http://localhost:1285/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "Qwen/Qwen3-VL-32B-Instruct",
+    "messages": [
+      {"role": "user", "content": [
+        {"type": "image_url", "image_url": {"url": "file:///path/to/image.jpg"}},
+        {"type": "text", "text": "What is in this image?"}
+      ]}
+    ],
+    "max_tokens": 512
+  }'
+```
+
+**Python Client:**
+```python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="EMPTY",
+    base_url="http://localhost:1285/v1"
+)
+
+response = client.chat.completions.create(
+    model="Qwen/Qwen3-VL-32B-Instruct",
+    messages=[
+        {
+            "role": "user",
+            "content": [
+                {"type": "image_url", "image_url": {"url": "file:///path/to/image.jpg"}},
+                {"type": "text", "text": "What is in this image?"}
+            ]
+        }
+    ],
+    max_tokens=512
+)
+print(response.choices[0].message.content)
+```
+
+### List Models
+
+```bash
+curl http://localhost:1285/v1/models
+```
+
+## Server Configuration
+
+The startup script (`start_vllm.sh`) uses these defaults:
+
+| Parameter | Value | Description |
+|-----------|-------|-------------|
+| `--model` | /data/lch/Models/Modelscope/Qwen3-VL-32B-Instruct | Model path |
+| `--served-model-name` | Qwen/Qwen3-VL-32B-Instruct | API model name |
+| `--tensor-parallel-size` | 1 | Number of GPUs for tensor parallelism |
+| `--quantization` | fp8 | 8-bit floating point quantization |
+| `--gpu-memory-utilization` | 0.9 | GPU memory usage ratio |
+| `--max-model-len` | 8192 | Maximum sequence length |
+| `--enforce-eager` | true | Disable CUDA graph for compatibility |
+| `--dtype` | auto | Automatic dtype selection |
+| `--port` | 1285 | Server port |
+
+## Environment
+
+- **Conda Environment**: `vllm_lch`
+- **vLLM Version**: 0.16.0
+- **GPU**: CUDA device 1
+
+## Troubleshooting
+
+### Check if server is running
+```bash
+curl http://localhost:1285/v1/models
+```
+
+### Check GPU usage
+```bash
+nvidia-smi
+```
+
+### Stop server
+```bash
+pkill -f "Qwen3-VL-32B-Instruct"
+```
+
+### Out of Memory
+Reduce `--gpu-memory-utilization` or `--max-model-len`:
+```bash
+bash start_vllm.sh --gpu-memory-utilization 0.8 --max-model-len 4096
+```
+
+### Slow Performance
+Disable `--enforce-eager` for CUDA graph optimization (if memory allows):
+```bash
+# Edit start_vllm.sh to remove --enforce-eager
+```

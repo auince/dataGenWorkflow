@@ -1,0 +1,74 @@
+# Vocabulary for text generation prompts
+# Defines categories, objects, actions, and attributes for rule-based prompt generation
+
+categories:
+  objects:
+    - person
+    - car
+    - dog
+    - cat
+    - tree
+    - building
+    - bicycle
+    - chair
+    - book
+    - phone
+  
+  actions:
+    - sitting
+    - running
+    - walking
+    - standing
+    - playing
+    - eating
+    - sleeping
+    - driving
+    - reading
+    - talking
+  
+  attributes:
+    - large
+    - small
+    - red
+    - blue
+    - green
+    - old
+    - new
+    - happy
+    - sad
+    - busy
+
+  scenes:
+    - indoor
+    - outdoor
+    - urban
+    - rural
+    - office
+    - home
+    - street
+    - park
+
+# Prompt templates for generating varied descriptions
+templates:
+  simple:
+    - "A {attribute} {object}"
+    - "A {object} {action}"
+    - "An {object} in a {scene} setting"
+
+  descriptive:
+    - "A {attribute} {object} that is {action} in a {scene}"
+    - "The {object} appears {attribute} while {action}"
+    - "In this {scene}, a {attribute} {object} is {action}"
+
+  detailed:
+    - "A {attribute} {object} {action} in the {scene}, showing clear features"
+    - "The scene depicts a {attribute} {object} engaged in {action} within a {scene} environment"
+    - "Within the {scene}, an {attribute} {object} can be seen {action}"
+
+# Generation rules
+rules:
+  min_prompts_per_image: 3
+  max_prompts_per_image: 5
+  prompt_length: "medium"  # short, medium, long
+  include_multiple_objects: true
+  include_scene_context: true
