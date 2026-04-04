@@ -7,7 +7,7 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
-log_dir = Path("/data/lch/SAM/datasets/训练集")
+log_dir = Path("/data/lch/SAM/datasets/train")
 log_file = log_dir / f"annotation_log_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log"
 
 logging.basicConfig(
@@ -65,18 +65,19 @@ class VLMCache:
     PROMPT_TEMPLATE = """Analyze this infrared/thermal image and identify the main concepts/objects that can be segmented.
 
 Requirements:
-- Generate 1-10 short concept labels (1-3 words each)
+- Generate 1-10 short concept labels in English (1-3 words each)
 - Cover different scales: large objects AND small targets
-- Use specific terms (e.g., "person" not "human", "car" not "vehicle")
+- Use specific English terms (e.g., "person" not "human", "car" not "vehicle")
 - Focus on distinct, separable objects
 - Only output concepts visible in the image
+- ALWAYS respond in English, never in Chinese or other languages
 
 Return JSON format:
 {{
   "concepts": ["concept1", "concept2", "concept3", ...]
 }}
 
-Only return valid JSON, no explanation."""
+Only return valid JSON with English concept labels, no explanation."""
 
     def __init__(self, cache_dir: Path):
         self.cache_dir = cache_dir
@@ -310,8 +311,8 @@ async def process_dataset(input_path: Path, output_path: Path, dataset_name: str
 
 
 async def main():
-    base_dir = Path("/data/lch/SAM/datasets/训练集/训练集")
-    output_base = Path("/data/lch/SAM/datasets/训练集/annotated")
+    base_dir = Path("/data/lch/SAM/datasets/train/train")
+    output_base = Path("/data/lch/SAM/datasets/train/annotated")
 
     datasets = ["data1", "data3", "data4", "data5", "data6", "data7"]
 

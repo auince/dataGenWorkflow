@@ -29,10 +29,12 @@ class AnnotationAgent(BaseAgent[AnnotationState]):
         name: str = "annotation_agent",
         model_path: str = "/data/lch/SAM/ultralytics-main/sam3.pt",
         device: str = None,
+        conf: float = 0.25,
     ):
         super().__init__(name)
         self.model_path = model_path
         self.device = device or ("cuda:1" if torch.cuda.is_available() else "cpu")
+        self.conf = conf
         self.predictor = None
 
     def _load_model(self):
@@ -47,6 +49,7 @@ class AnnotationAgent(BaseAgent[AnnotationState]):
                     "device": self.device,
                     "verbose": False,
                     "save": False,
+                    "conf": self.conf,
                 }
             )
 

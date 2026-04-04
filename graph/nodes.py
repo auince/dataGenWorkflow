@@ -200,11 +200,118 @@ async def node_annotation(state: PipelineState) -> PipelineState:
     logger.info(
         f"Annotation output: masks={len(state['masks'])}, segments={len(state['annotations'].get('segments', []))}"
     )
+
+    if len(state["masks"]) == 0 and not state.get("annotation_retried", False):
+        logger.info(
+            f"No masks generated, retrying with lower confidence for {current_image}"
+        )
+        state["annotation_retried"] = True
+        vlm_cache_dir = state.get("vlm_cache_dir")
+        if vlm_cache_dir:
+            from pathlib import Path
+
+            img_name = Path(current_image).stem
+            cache_path = Path(vlm_cache_dir) / f"vlm_{img_name}.json"
+            if cache_path.exists():
+                cache_path.unlink()
+                logger.info(f"Cleared VLM cache for {img_name}")
+        from agents.annotation import AnnotationAgent
+
+        retry_agent = AnnotationAgent(name="annotation_agent_retry", conf=0.1)
+        from agents.prompt_gen import PromptGenAgent
+
+        pg_agent = PromptGenAgent(name="prompt_generator")
+        pg_state = {
+            "current_image": current_image,
+            "text_prompts": [],
+            "vlm_raw_response": None,
+            "vlm_cache_dir": vlm_cache_dir,
+        }
+        pg_result = await pg_agent.process(pg_state)
+        retry_text_prompts = pg_result.get("text_prompts", ["object"])
+        logger.info(f"Retry with new prompts: {retry_text_prompts}")
+        annotation_state["text_prompts"] = retry_text_prompts
+        result = await retry_agent.process(annotation_state)
+        state["annotations"] = result.get("annotations", {})
+        state["masks"] = result.get("masks", [])
+        state["small_target_masks"] = result.get("small_target_masks", [])
+        logger.info(
+            f"Retry annotation output: masks={len(state['masks'])}, segments={len(state['annotations'].get('segments', []))}"
+        )
+
+    if len(state["masks"]) == 0:
+        logger.warning(f"Still no masks after retry, giving up on {current_image}")
+
     state["checkpoint"] = {
         "step": 2,
         "timestamp": datetime.now().isoformat(),
         "agent_name": "annotation",
     }
+    state.pop("annotation_retried", None)
+
+    logger.info(f"Annotation complete for {current_image}")
+    return state
+
+    annotation_state = _convert_to_annotation_state(state)
+    agent = _get_annotation_agent()
+
+    result = await agent.process(annotation_state)
+
+    state["annotations"] = result.get("annotations", {})
+    state["masks"] = result.get("masks", [])
+    state["small_target_masks"] = result.get("small_target_masks", [])
+
+    logger.info(
+        f"Annotation output: masks={len(state['masks'])}, segments={len(state['annotations'].get('segments', []))}"
+    )
+
+    if len(state["masks"]) == 0 and not state.get("annotation_retried", False):
+        logger.info(
+            f"No masks generated, retrying with lower confidence for {current_image}"
+        )
+        state["annotation_retried"] = True
+        vlm_cache_dir = state.get("vlm_cache_dir")
+        if vlm_cache_dir:
+            from pathlib import Path
+
+            img_name = Path(current_image).stem
+            cache_path = Path(vlm_cache_dir) / f"vlm_{img_name}.json"
+            if cache_path.exists():
+                cache_path.unlink()
+                logger.info(f"Cleared VLM cache for {img_name}")
+        retry_agent = _get_annotation_agent()
+        retry_agent.conf = 0.1
+        retry_agent.predictor = None
+        from agents.prompt_gen import PromptGenAgent
+
+        pg_agent = _get_promptgen_agent()
+        pg_state = {
+            "current_image": current_image,
+            "text_prompts": [],
+            "vlm_raw_response": None,
+            "vlm_cache_dir": vlm_cache_dir,
+        }
+        pg_result = await pg_agent.process(pg_state)
+        retry_text_prompts = pg_result.get("text_prompts", ["object"])
+        logger.info(f"Retry with new prompts: {retry_text_prompts}")
+        annotation_state["text_prompts"] = retry_text_prompts
+        result = await retry_agent.process(annotation_state)
+        state["annotations"] = result.get("annotations", {})
+        state["masks"] = result.get("masks", [])
+        state["small_target_masks"] = result.get("small_target_masks", [])
+        logger.info(
+            f"Retry annotation output: masks={len(state['masks'])}, segments={len(state['annotations'].get('segments', []))}"
+        )
+
+    if len(state["masks"]) == 0:
+        logger.warning(f"Still no masks after retry, giving up on {current_image}")
+
+    state["checkpoint"] = {
+        "step": 2,
+        "timestamp": datetime.now().isoformat(),
+        "agent_name": "annotation",
+    }
+    state.pop("annotation_retried", None)
 
     logger.info(f"Annotation complete for {current_image}")
     return state
